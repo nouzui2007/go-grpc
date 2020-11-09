@@ -1,8 +1,8 @@
 package model
 
 import (
-	"goexample/pkg"
 	"fmt"
+	"goexample/pkg"
 	"net/http"
 	"time"
 
@@ -15,9 +15,9 @@ type (
 	//User はdtb_userの構造体です。
 	User struct {
 		BaseModel
-		Name        *string     `json:"name" validate:"required"`
-		Password *string     `json:"-"`
-		Expired        *time.Time `json:"expired"`
+		Name     *string    `json:"name" validate:"required"`
+		Password *string    `json:"-"`
+		Expired  *time.Time `json:"expired"`
 	}
 )
 

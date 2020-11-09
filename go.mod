@@ -13,6 +13,7 @@ require (
 	github.com/labstack/gommon v0.3.0
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/sqs/goreturns v0.0.0-20181028201513-538ac6014518 // indirect
+	github.com/stretchr/testify v1.4.0
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/tools v0.0.0-20201105220310-78b158585360 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
