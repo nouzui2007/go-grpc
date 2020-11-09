@@ -2,14 +2,13 @@ package handler
 
 import (
 	"goexample/configs"
-	"goexample/model/entity"
+	"goexample/model"
 	"goexample/pkg"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"reflect"
-	"strconv"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
@@ -39,9 +38,7 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 //
 type Context struct {
 	echo.Context
-	userInfo entity.User
-	karteAPI myKarte.Function
-	vitalAPI *vital.API
+	userInfo model.User
 }
 
 //Register はHandlerではルーティングの設定を行なっています。
@@ -54,10 +51,6 @@ func (h *Handler) Register(router *echo.Echo) {
 	router.Use(middleware.BodyDump(bodyDumpHandler))
 
 	v1 := router.Group("v1")
-	v1.Use(CheckVersionMiddleware(h.db))
-
-	appVersion := v1.Group("/app_version")
-	appVersion.GET("", h.GetAppVersion)
 
 	// アクセストークンを用いて認可しないものは先に宣言
 	login := v1.Group("/login")
@@ -67,7 +60,6 @@ func (h *Handler) Register(router *echo.Echo) {
 	users := v1.Group("/users")
 	users.POST("", h.CreateUser)
 	users.PUT("", h.UpdateUser)
-	users.POST("/confirmationcode", h.ConfirmationCode)
 
 	v1.Use(AuthMiddleware(h.db))
 
@@ -76,85 +68,6 @@ func (h *Handler) Register(router *echo.Echo) {
 	//logout
 	logout := v1.Group("/logout")
 	logout.POST("", h.Logout)
-
-	//af_symptoms
-	afSymptoms := v1.Group("/af_symptoms")
-	afSymptoms.GET("", h.GetAfSymptoms)
-
-	//articles
-	articles := v1.Group("/articles")
-	articles.GET("", h.GetArticles)
-
-	//article_brows_histories
-	articleBrowsHistories := v1.Group("/article_brows_histories")
-	articleBrowsHistories.POST("", h.CreateArticleBrowsHistory)
-
-	//dose_histories
-	doseHistories := v1.Group("/dose_histories")
-	doseHistories.GET("/:record_date_start/:record_date_to", h.GetDoseHistoriesBetweenRecordDates)
-	doseHistories.POST("", h.CreateDoseHistory)
-	doseHistories.PUT("/:id", h.UpdateDoseHistory)
-
-	//dose_notifications
-	doseNotifications := v1.Group("/dose_notifications")
-	doseNotifications.GET("", h.GetDoseNotifications)
-	doseNotifications.POST("", h.CreateDoseNotification)
-	doseNotifications.PUT("/:id", h.UpdateDoseNotification)
-	doseNotifications.PUT("", h.SaveDoseNotification)
-
-	//dose_notification_times
-	doseNotificationTimes := v1.Group("/dose_notification_times")
-	doseNotificationTimes.GET("", h.GetDoseNotificationTimes)
-
-	//dose_statuses
-	doseStatuses := v1.Group("/dose_statuses")
-	doseStatuses.GET("", h.GetDoseStatuses)
-
-	//dose_timings
-	doseTimings := v1.Group("/dose_timings")
-	doseTimings.GET("", h.GetDoseTimings)
-
-	//dose_patterns
-	dosePatterns := v1.Group("/dose_patterns")
-	dosePatterns.GET("", h.GetDosePatterns)
-
-	//dose_units
-	doseUnits := v1.Group("/dose_units")
-	doseUnits.GET("", h.GetDoseUnits)
-
-	//drugs
-	drugs := v1.Group("/drugs")
-	drugs.GET("", h.GetDrugs)
-
-	//medicines
-	medicines := v1.Group("/medicines")
-	medicines.GET("", h.GetMedicinesOfTaking)
-	medicines.POST("", h.CreateMedicine)
-	medicines.PUT("/:id", h.UpdateMedicine)
-	medicines.PATCH("/:id/delete", h.FinishedTaking)
-
-	//medicine_side_effects
-	medicineSideEffects := v1.Group("/medicine_side_effects")
-	medicineSideEffects.GET("", h.GetMedicineSideEffects)
-
-	//profiles
-	profiles := v1.Group("/profiles")
-	profiles.GET("", h.GetProfile)
-	profiles.POST("", h.CreateProfile)
-	profiles.PUT("", h.UpdateProfile)
-
-	//symptoms
-	symptoms := v1.Group("/symptoms")
-	symptoms.GET("/:record_date_start/:record_date_to", h.GetSymptomsBetweenRecordDates)
-	symptoms.POST("", h.CreateSymptom)
-	symptoms.PUT("/:id", h.UpdateSymptom)
-	symptoms.DELETE("/:id", h.DeleteSymptom)
-
-	vitals := v1.Group("/vitals")
-	vitals.GET("/:record_date_start/:record_date_to", h.GetVitalsBetweenRecordDates)
-	vitals.POST("", h.CreateVital)
-	vitals.PUT("", h.UpdateVital)
-	vitals.PUT("/delete", h.DeleteVital)
 }
 
 //AuthMiddleware はアクセストークンの認可を行います。
@@ -199,7 +112,7 @@ func AuthMiddleware(db *gorm.DB) echo.MiddlewareFunc {
 			c.Logger().Debug("Access Token Verified", claim)
 
 			// DSAF get user
-			user := entity.NewUser()
+			user := model.NewUser()
 			if err := user.FindByID(db, &claim.UserID); err != nil {
 				if appErr, ok := err.(*pkg.AppError); ok && appErr.Code == http.StatusNotFound {
 					c.Logger().Error("User not found")
@@ -218,34 +131,9 @@ func AuthMiddleware(db *gorm.DB) echo.MiddlewareFunc {
 			err = next(&Context{
 				Context:  c,
 				userInfo: *user,
-				karteAPI: &myKarte.API{
-					Token: claim.MyKarteToken,
-				},
-				vitalAPI: vital.NewAPI(user.WelbyID),
 			})
 
 			return err
-		}
-	}
-}
-
-//CheckVersionMiddleware はバージョンをチェックしてレスポンスヘッダに結果を追加します。
-func CheckVersionMiddleware(db *gorm.DB) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-
-			header := c.Request().Header
-			device := header.Get(configs.Conf.Request.DeviceKey)
-			version := header.Get(configs.Conf.Request.VersionKey)
-
-			appVersion := entity.NewAppVersion()
-			b, err := appVersion.ExistsUpperVersion(db, device, version)
-			if err != nil {
-				return err
-			}
-			c.Response().Header().Set(configs.Conf.Response.UpdateRequiredKey, strconv.FormatBool(b))
-
-			return next(c)
 		}
 	}
 }

@@ -12,16 +12,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type (
-	KarteAPIMock struct {
-		myKarte.API
-	}
-)
-
-func newKarteAPIMock() *KarteAPIMock {
-	return &KarteAPIMock{}
-}
-
 func TestMain(m *testing.M) {
 	//DB接続 終了時にクローズ
 	shutdown := test.SetupDBConn()
@@ -43,7 +33,6 @@ func createContext(method string, uri string, reader io.Reader) (*Context, *http
 	return &Context{
 		Context:  c,
 		userInfo: u,
-		karteAPI: newKarteAPIMock(),
 	}, rec
 }
 

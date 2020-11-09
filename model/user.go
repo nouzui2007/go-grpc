@@ -15,8 +15,8 @@ type (
 	//User はdtb_userの構造体です。
 	User struct {
 		BaseModel
-		WelbyID        *int32     `json:"welby_user_id" gorm:"type:int(10);NOT NULL" validate:"required"`
-		KartePatientID *int32     `json:"karte_patient_id" gorm:"type:int(10)"`
+		Name        *string     `json:"name" validate:"required"`
+		Password *string     `json:"-"`
 		Expired        *time.Time `json:"expired"`
 	}
 )
@@ -41,9 +41,6 @@ func (m *User) BeforeSave() error {
 //FindByID はidによってユーザ情報を取得します。
 func (m *User) FindByID(db *gorm.DB, id *int32) error {
 	rnf := db.Where("id = ?", id).First(m).RecordNotFound()
-	if err := db.Error; err != nil {
-		return xerrors.Errorf("query error: %w", err)
-	}
 	// data not found
 	if rnf {
 		fmt.Println("data not found")
@@ -52,18 +49,14 @@ func (m *User) FindByID(db *gorm.DB, id *int32) error {
 	return nil
 }
 
-//FindByWelbyID はwelbyIDによってユーザ情報を取得します。
-func (m *User) FindByWelbyID(db *gorm.DB, welbyID *int32) (*User, error) {
-	var r = NewUser()
-	rnf := db.Where("welby_id = ?", welbyID).First(r).RecordNotFound()
-	if err := db.Error; err != nil {
-		return nil, xerrors.Errorf("query error: %w", err)
-	}
+//FindByName はnameによってユーザ情報を取得します。
+func (m *User) FindByName(db *gorm.DB, name *string) error {
+	rnf := db.Where("name = ?", name).First(m).RecordNotFound()
 	// data not found
 	if rnf {
-		return nil, &pkg.AppError{Code: http.StatusNotFound, Err: xerrors.New("data not found")}
+		return &pkg.AppError{Code: http.StatusNotFound, Err: xerrors.New("data not found")}
 	}
-	return r, nil
+	return nil
 }
 
 //Create は新規ユーザ情報を作成します。

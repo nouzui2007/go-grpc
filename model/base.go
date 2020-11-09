@@ -15,12 +15,6 @@ type (
 		UpdatedAt *time.Time `json:"-"`
 		Deleted   *int32     `json:"-"`
 	}
-
-	//NamedBaseModel は名称付きのベースモデル
-	NamedBaseModel struct {
-		BaseModel
-		Name *string `json:"name" gorm:"type:varchar(45);NOT NULL`
-	}
 )
 
 //NewBaseModel は初期値をつめてオブジェクトを生成します。
@@ -29,13 +23,6 @@ func NewBaseModel() BaseModel {
 		// Created:  pkg.TimeToTPtr(time.Now()),
 		// Modified: pkg.TimeToTPtr(time.Now()),
 		Deleted: pkg.IntToIPtr(0),
-	}
-}
-
-//NewNamedBaseModel は初期値をつめてオブジェクトを生成します。
-func NewNamedBaseModel() NamedBaseModel {
-	return NamedBaseModel{
-		BaseModel: NewBaseModel(),
 	}
 }
 
