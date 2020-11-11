@@ -14,4 +14,6 @@ RUN apk update && \
     apk add mysql-client && \
     apk add mysql-dev && \
     go get golang.org/x/tools/cmd/godoc &&\
+    go get github.com/go-delve/delve/cmd/dlv && \
+    go get golang.org/x/tools/cmd/goimports &&\
     rm -rf /var/cache/apk/*
