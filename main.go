@@ -1,15 +1,9 @@
 package main
 
 import (
-	"goexample/router"
+	"fmt"
 )
 
 func main() {
-
-	// init router
-	r := router.New()
-
-	// サーバー起動
-	r.Start(":80")
-
+	fmt.Printf("Hello world")
 }

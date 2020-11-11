@@ -5,7 +5,7 @@ ENV GOPATH /go
 ENV PATH $PATH:$GOPATH/bin
 ENV CGO_ENABLED=0
 
-WORKDIR /var/dsaf-api
+WORKDIR /grpcexample
 
 RUN GOOS=linux CGO_ENABLED=0 GOARCH=amd64
 

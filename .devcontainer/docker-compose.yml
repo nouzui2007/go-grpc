@@ -7,22 +7,8 @@ services:
     ports:
       - "10080:80"
     volumes:
-      - ../:/goexample
+      - ../:/grpcexample
     security_opt:
       - apparmor:unconfined
     cap_add:
       - SYS_PTRACE
-    depends_on: 
-      - mysql
-
-  mysql:
-    build: "./mysql"
-    volumes:
-      - ./mysql/sql:/docker-entrypoint-initdb.d
-    ports:
-      - "13306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: admin
-      MYSQL_DATABASE: goexample
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: admin
